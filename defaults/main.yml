@@ -1,5 +1,9 @@
 ---
 
+# Workarounds for running the playbook in this role
+ansible_root_dir: "{{ playbook_dir }}"
+ansible_root_dir_roles_path: "{{ ansible_root_dir }}/roles"
+
 modified_ssh_port: ""
 
 wait_for_ssh_timeout: 5
@@ -9,4 +13,4 @@ configure_ssh_keys: true
 ssh_keys:
   - name: default user ssh key
     user: "{{ ansible_user | default('root') }}"
-    key: '{{ lookup("file", "~/.ssh/id_rsa.pub") }}'
+    key: '{{ lookup("file", "~/.ssh/id_rsa.pub") | default("") }}'
