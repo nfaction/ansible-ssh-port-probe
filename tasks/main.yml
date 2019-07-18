@@ -51,9 +51,10 @@
 ####################
 - name: install ssh key(s)
   authorized_key:
-    user: "{{ item.user }}"
+    user: "{{ ssh_key_user | default(item.user) }}"
     state: present
     key: "{{ item.key }}"
+  become: "{{ ssh_key_sudo | default(false) }}"
   with_items:
     - "{{ ssh_keys | default([]) }}"
   when:
