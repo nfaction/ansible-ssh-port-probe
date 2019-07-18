@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  vars: []
+  # os_vars_dir: ../../../../group_vars/operating-systems
+  roles:
+    - role: ansible-ssh-port-probe

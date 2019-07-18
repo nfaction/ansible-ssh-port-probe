@@ -1,0 +1,12 @@
+---
+
+modified_ssh_port: ""
+
+wait_for_ssh_timeout: 5
+
+configure_ssh_keys: true
+
+ssh_keys:
+  - name: default user ssh key
+    user: "{{ ansible_user | default('root') }}"
+    key: '{{ lookup("file", "~/.ssh/id_rsa.pub") }}'

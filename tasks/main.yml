@@ -1,0 +1,60 @@
+---
+#####################
+# Probe SSH Port(s) #
+#####################
+- name: "test ssh on port {{ modified_ssh_port | default('') }}"
+  wait_for:
+    port: "{{ modified_ssh_port | default('314') }}"
+    state: 'started'
+    timeout: "{{ wait_for_ssh_timeout | default('5') }}"
+    host: "{{ ansible_host | default(inventory_hostname) }}"
+  delegate_to: localhost
+  register: custom_ssh
+  ignore_errors: true
+  when:
+    - modified_ssh_port != ""
+
+- name: test default ssh port
+  wait_for:
+    port: 22
+    state: 'started'
+    timeout: "{{ wait_for_ssh_timeout | default('5') }}"
+    host: "{{ ansible_host | default(inventory_hostname) }}"
+  delegate_to: localhost
+  register: default_ssh
+  ignore_errors: true
+
+- name: "set ansible_ssh_port to {{ modified_ssh_port | default('') }}"
+  set_fact:
+    ansible_ssh_port: "{{ modified_ssh_port | default('') }}"
+    ansible_port: "{{ modified_ssh_port | default('') }}"
+  when:
+    - custom_ssh is defined
+    - modified_ssh_port != ""
+    - custom_ssh.elapsed < wait_for_ssh_timeout
+
+- name: set ansible_ssh_port to default
+  set_fact:
+    ansible_ssh_port: 22
+    ansible_port: 22
+  when:
+    - default_ssh.elapsed < wait_for_ssh_timeout
+
+#######################
+# Test SSH Connection #
+#######################
+- name: try to ansible ping the host before moving on
+  ping:
+
+####################
+# Install SSH Keys #
+####################
+- name: install ssh key(s)
+  authorized_key:
+    user: "{{ item.user }}"
+    state: present
+    key: "{{ item.key }}"
+  with_items:
+    - "{{ ssh_keys | default([]) }}"
+  when:
+    - configure_ssh_keys | bool
