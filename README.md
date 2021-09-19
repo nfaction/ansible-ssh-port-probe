@@ -1,6 +1,6 @@
 # ansible-ssh-port-probe
 
-[![Build Status](https://travis-ci.org/nfaction/ansible-ssh-port-probe.svg?branch=master)](https://travis-ci.org/nfaction/ansible-ssh-port-probe)
+[![Ansible Molecule Test Matrix](https://github.com/nfaction/ansible-ssh-port-probe/actions/workflows/molecule.yml/badge.svg)](https://github.com/nfaction/ansible-ssh-port-probe/actions/workflows/molecule.yml)
 
 Test ssh port(s) and install a one or more ssh keys for future logins
 
