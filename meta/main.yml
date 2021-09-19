@@ -1,5 +1,7 @@
 ---
 galaxy_info:
+  role_name: ssh-port-probe
+  namespace: ansible
   author: Matthew DePorter
   description: Role to preconfigure ssh and access hosts on non-standard ports
   company: Mobile-Tech LLC
