@@ -40,6 +40,44 @@
   when:
     - default_ssh.elapsed < wait_for_ssh_timeout
 
+###############################
+# Pre-configure OS for Python #
+###############################
+- name: manually check OS version
+  raw: "cat /etc/issue | awk '{ print $1,$3 }' | xargs echo -n"
+  register: manual_os_version
+  changed_when: false
+
+- name: set bootstrap_python for localhost
+  set_fact:
+    bootstrap_python: true
+  when:
+    - manual_os_version.stdout in os_without_python_preinstalled
+  delegate_to: localhost
+  tags:
+    - bootstrap-python
+
+- name: install python
+  raw: "apt update -y && apt install python3 -y"
+  changed_when: false
+  when:
+    - bootstrap_python | bool
+    - manual_os_version.stdout | regex_search('Debian')
+    - manual_os_version.stdout in os_without_python_preinstalled
+  tags:
+    - bootstrap-python
+
+- name: set default python
+  raw: "update-alternatives --install /usr/bin/python python /usr/bin/python3 1"
+  changed_when: false
+  when:
+    - bootstrap_python | bool
+
+- name: override default python version
+  set_fact:
+    ansible_python_interpreter: "{{ remote_python }}"
+  when: manual_os_version.stdout in os_without_python_preinstalled
+
 #######################
 # Test SSH Connection #
 #######################
