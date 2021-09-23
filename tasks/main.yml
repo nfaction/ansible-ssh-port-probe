@@ -2,24 +2,22 @@
 #####################
 # Probe SSH Port(s) #
 #####################
-- name: "test ssh on port {{ modified_ssh_port | default('') }}"
+- name: "test ssh on port {{ modified_ssh_port }}"
   wait_for:
-    port: "{{ modified_ssh_port | default('314') }}"
+    port: "{{ modified_ssh_port }}"
     state: 'started'
-    timeout: "{{ wait_for_ssh_timeout | default('5') }}"
-    host: "{{ ansible_host | default(inventory_hostname) }}"
+    timeout: "{{ wait_for_ssh_timeout }}"
+    host: "{{ hostname_override | default(inventory_hostname | default('ansible_host')) }}"
   delegate_to: localhost
   register: custom_ssh
   ignore_errors: true
-  when:
-    - modified_ssh_port != ""
 
 - name: test default ssh port
   wait_for:
     port: 22
     state: 'started'
     timeout: "{{ wait_for_ssh_timeout | default('5') }}"
-    host: "{{ ansible_host | default(inventory_hostname) }}"
+    host: "{{ hostname_override | default(inventory_hostname | default('ansible_host')) }}"
   delegate_to: localhost
   register: default_ssh
   ignore_errors: true
@@ -57,26 +55,44 @@
   tags:
     - bootstrap-python
 
+- name: check to see if python is installed
+  raw: python3 -V
+  changed_when: false
+  failed_when: false
+  register: python_installed
+  when:
+    - bootstrap_python | bool
+
 - name: install python
-  raw: "apt update -y && apt install python3 -y"
+  raw: "{{ python_install_cmd }}"
   changed_when: false
   when:
     - bootstrap_python | bool
     - manual_os_version.stdout | regex_search('Debian')
     - manual_os_version.stdout in os_without_python_preinstalled
+    - not python_installed.stdout | regex_search('Python')
   tags:
     - bootstrap-python
-
-- name: set default python
-  raw: "update-alternatives --install /usr/bin/python python /usr/bin/python3 1"
-  changed_when: false
-  when:
-    - bootstrap_python | bool
 
 - name: override default python version
   set_fact:
     ansible_python_interpreter: "{{ remote_python }}"
   when: manual_os_version.stdout in os_without_python_preinstalled
+
+- name: make python default alternative
+  alternatives:
+    name: python
+    path: "{{ alternative_python_path }}"
+    priority: 1
+  when:
+    - bootstrap_python | bool
+    - not python_installed.stdout | regex_search('Python')
+
+#- name: set default python
+#  raw: "update-alternatives --install /usr/bin/python python /usr/bin/python3 1"
+#  changed_when: false
+#  when:
+#    - bootstrap_python | bool
 
 #######################
 # Test SSH Connection #
