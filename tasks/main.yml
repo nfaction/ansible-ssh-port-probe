@@ -79,15 +79,31 @@
     ansible_python_interpreter: "{{ remote_python }}"
   when: manual_os_version.stdout in os_without_python_preinstalled
 
+################################################
+# Make the installed version of python default #
+################################################
+- name: get installed python version
+  raw: "find /usr/bin -iname 'python*' -type f | head -n 1 | xargs echo -n"
+  register: installed_python_version_path
+  changed_when: false
+  failed_when: false
+  when:
+    - bootstrap_python | bool
+    - set_python_alterative | bool
+    - not python_installed.stdout | regex_search('Python')
+
 - name: make python default alternative
   alternatives:
     name: python
-    path: "{{ alternative_python_path }}"
+    link: "{{ probe_python_interpreter }}"
+    path: "{{ installed_python_version_path.stdout }}"
     priority: 1
   when:
     - bootstrap_python | bool
+    - set_python_alterative | bool
     - not python_installed.stdout | regex_search('Python')
 
+# Manual version
 #- name: set default python
 #  raw: "update-alternatives --install /usr/bin/python python /usr/bin/python3 1"
 #  changed_when: false

@@ -24,6 +24,8 @@ os_without_python_preinstalled:
 python_install_cmd: "apt update -y && apt install python3 -y"
 probe_python_interpreter: "/usr/bin/python"
 remote_python: "python3"
+
+set_python_alterative: true
 alternative_python_path: "/usr/bin/python3"
 
 ############
