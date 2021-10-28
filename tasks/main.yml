@@ -121,9 +121,16 @@
 ####################
 - name: install ssh key(s)
   authorized_key:
-    user: "{{ ssh_key_user | default(item.user) }}"
-    state: present
+    user: "{{ item.user }}"
     key: "{{ item.key }}"
+    key_options: "{{ item.key_options | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+    comment: "{{ item.comment | default(omit) }}"
+    follow: "{{ item.follow | default(omit) }}"
+    exclusive: "{{ item.exclusive | default(omit) }}"
+    manage_dir: "{{ item.manage_dir | default(omit) }}"
+    path: "{{ item.path | default(omit) }}"
+    validate_certs: "{{ item.validate_certs | default(omit) }}"
   become: "{{ ssh_key_sudo | default(false) }}"
   with_items:
     - "{{ ssh_keys | default([]) }}"
