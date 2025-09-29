@@ -55,6 +55,7 @@
   set_fact:
     bootstrap_python: true
   when:
+    - not (skip_ssh_probe | default(false) | bool)
     - manual_os_version.stdout in os_without_python_preinstalled
   delegate_to: localhost
   tags:
@@ -72,10 +73,11 @@
   raw: "{{ python_install_cmd }}"
   changed_when: false
   when:
+    - not (skip_ssh_probe | default(false) | bool)
     - bootstrap_python | bool
-    - manual_os_version.stdout | regex_search('Debian') | bool
+    - manual_os_version.stdout | regex_search('Debian') is not none
     - manual_os_version.stdout in os_without_python_preinstalled
-    - not (python_installed.stdout | regex_search('Python') | bool)
+    - python_installed.stdout | regex_search('Python') is none
   tags:
     - bootstrap-python
 
@@ -93,9 +95,10 @@
   changed_when: false
   failed_when: false
   when:
+    - not (skip_ssh_probe | default(false) | bool)
     - bootstrap_python | bool
     - set_python_alterative | bool
-    - not (python_installed.stdout | regex_search('Python') | bool)
+    - python_installed.stdout | regex_search('Python') is none
 
 - name: make python default alternative
   alternatives:
@@ -104,9 +107,11 @@
     path: "{{ installed_python_version_path.stdout }}"
     priority: 1
   when:
+    - not (skip_ssh_probe | default(false) | bool)
     - bootstrap_python | bool
     - set_python_alterative | bool
-    - not (python_installed.stdout | regex_search('Python') | bool)
+    - python_installed.stdout | regex_search('Python') is none
+  ignore_errors: true
 
 # Manual version
 #- name: set default python
