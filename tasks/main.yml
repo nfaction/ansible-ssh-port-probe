@@ -29,14 +29,15 @@
   when:
     - custom_ssh is defined
     - modified_ssh_port != ""
-    - custom_ssh.elapsed < wait_for_ssh_timeout
+    - custom_ssh.elapsed < (wait_for_ssh_timeout | int)
 
 - name: set ansible_ssh_port to default
   set_fact:
     ansible_ssh_port: 22
     ansible_port: 22
   when:
-    - default_ssh.elapsed < wait_for_ssh_timeout
+    - default_ssh.elapsed < (wait_for_ssh_timeout | int)
+    - custom_ssh is not defined or custom_ssh.failed or custom_ssh.elapsed >= (wait_for_ssh_timeout | int)
 
 ###############################
 # Pre-configure OS for Python #
@@ -119,6 +120,34 @@
 ####################
 # Install SSH Keys #
 ####################
+- name: ensure ssh key user home directories exist
+  file:
+    path: "{{ '~' + item.user if item.user != 'root' else '/root' }}"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: '0755'
+  become: "{{ ssh_key_sudo | default(true) }}"
+  with_items:
+    - "{{ ssh_keys | default([]) }}"
+  when:
+    - configure_ssh_keys | bool
+    - item.key | default('') != ''
+
+- name: ensure .ssh directories exist with proper permissions
+  file:
+    path: "{{ ('~' + item.user if item.user != 'root' else '/root') + '/.ssh' }}"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: '0700'
+  become: "{{ ssh_key_sudo | default(true) }}"
+  with_items:
+    - "{{ ssh_keys | default([]) }}"
+  when:
+    - configure_ssh_keys | bool
+    - item.key | default('') != ''
+
 - name: install ssh key(s)
   authorized_key:
     user: "{{ item.user }}"
@@ -128,11 +157,12 @@
     comment: "{{ item.comment | default(omit) }}"
     follow: "{{ item.follow | default(omit) }}"
     exclusive: "{{ item.exclusive | default(omit) }}"
-    manage_dir: "{{ item.manage_dir | default(omit) }}"
+    manage_dir: "{{ item.manage_dir | default(true) }}"
     path: "{{ item.path | default(omit) }}"
     validate_certs: "{{ item.validate_certs | default(omit) }}"
-  become: "{{ ssh_key_sudo | default(false) }}"
+  become: "{{ ssh_key_sudo | default(true) }}"
   with_items:
     - "{{ ssh_keys | default([]) }}"
   when:
     - configure_ssh_keys | bool
+    - item.key | default('') != ''

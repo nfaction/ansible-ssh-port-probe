@@ -32,6 +32,7 @@ alternative_python_path: "/usr/bin/python3"
 # SSH Keys #
 ############
 configure_ssh_keys: true
+ssh_key_sudo: true
 
 ssh_pub_key: "id_rsa.pub"
 
